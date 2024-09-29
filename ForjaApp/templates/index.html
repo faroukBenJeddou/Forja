@@ -4,7 +4,8 @@
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Forja</title>    {% load static %}  
+	<title>Forja</title>
+    {% load static %}  
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/font-awesome.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/global.css' %}" rel="stylesheet">
@@ -70,7 +71,7 @@
             Blog
           </a>
           <ul class="dropdown-menu drop_1" aria-labelledby="navbarDropdown">
-            <li><a class="dropdown-item" href="blog.html">Blog</a></li>
+            <li><a class="dropdown-item" href="{% static 'blog.html' %}">Blog</a></li>
             <li><a class="dropdown-item border-0" href="blog_detail.html">Blog Detail</a></li>
           </ul>
         </li>
@@ -95,11 +96,28 @@
 		<li class="nav-item">
           <a class="nav-link" href="contact.html">Contact Us</a>
         </li>
+
+        {% if user.is_authenticated %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'profile' %}">Profile</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'logout' %}">Déconnexion</a>
+        </li>
+        {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'login' %}">Se connecter</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'register' %}">S'inscrire</a>
+        </li>
+        {% endif %}
       </ul>
     </div>
   </div>
 </nav>
 </section>
+
 
 <section id="center" class="center_home">
  <div id="carouselExampleCaptions" class="carousel slide" data-bs-ride="carousel">

@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure-bz)=)^zwse02zh6340m@np@+o#)y^p#q-r=y*=t5b=8(4gxo)*
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
+#'localhost', '127.0.0.1'
 ALLOWED_HOSTS = []
 
 
@@ -36,7 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',    'ForjaApp',
+    'django.contrib.staticfiles',    'ForjaApp',  'widget_tweaks',
    
 ]
 

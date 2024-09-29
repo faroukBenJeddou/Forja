@@ -17,7 +17,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from ForjaApp import views
+from django.conf.urls import handler404
+
 
 urlpatterns = [path('', views.index, name='index'),
-    path('admin/', admin.site.urls), 
+    path('admin/', admin.site.urls),  
+    path('register/', views.register, name='register'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),     
+    path('profile/', views.profile, name='profile'),
+
 ]
+handler404 = 'ForjaApp.views.custom_404_view'  

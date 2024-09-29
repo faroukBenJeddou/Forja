@@ -1,0 +1,76 @@
+{% extends "base_generic.html" %}
+{% load widget_tweaks %}
+{% block content %}
+  <style>
+    .login-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh; /* Assurez-vous que la hauteur est de 100% de la fenêtre */
+      position: relative; /* Position relative pour le conteneur */
+      z-index: 1; /* Assurez-vous que le wrapper est au premier plan */
+    }
+
+    .login-container {
+      background-color: rgba(25, 26, 29, 0.8);
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      width: 300px;
+      text-align: center;
+      z-index: 10; /* Mettre le conteneur au premier plan */
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #de1002;
+    }
+
+    .form-control {
+      margin-bottom: 15px;
+      padding: 10px;
+      border: 1px solid #27292d;
+      border-radius: 4px;
+      color: #999!important;
+      background: none;
+    }
+
+    .form-control:focus {
+      box-shadow: none;
+      border-color: #de1002;
+    }
+
+    button.btn-login {
+      background: #de1002;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      width: 100%;
+    }
+
+    button.btn-login:hover {
+      background: #fff;
+      color: #de1002;
+    }
+
+    ::placeholder {
+      color: #999!important;
+      opacity: 1;
+    }
+  </style>
+
+  <div class="login-wrapper">
+    <div class="login-container">
+      <h2>Se connecter</h2>
+      <form method="post">
+        {% csrf_token %}
+        {{ form.username|add_class:"form-control" }}
+        {{ form.password|add_class:"form-control" }}
+        <button type="submit" class="btn-login">Se connecter</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base_generic.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+  <style>
+    .registration-container {
+      background-color: rgba(25, 26, 29, 0.8);
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      width: 400px; /* Largeur du conteneur */
+      margin: 50px auto; /* Centrer le conteneur avec une marge */
+      text-align: center;
+      color: #ffffff; /* Couleur du texte */
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #de1002; /* Couleur du titre */
+      font-size: 24px; /* Taille de la police */
+    }
+
+    .form-control {
+      margin-bottom: 15px;
+      padding: 10px;
+      border: 1px solid #27292d;
+      border-radius: 4px;
+      color: #999 !important;
+      background: none;
+      width: 100%; /* Largeur complète */
+    }
+
+    .form-control:focus {
+      box-shadow: none;
+      border-color: #de1002; /* Couleur de la bordure au focus */
+    }
+
+    button[type="submit"] {
+      background: #de1002;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      width: 100%; /* Largeur complète */
+      font-size: 16px; /* Taille de la police du bouton */
+    }
+
+    button[type="submit"]:hover {
+      background: #fff; /* Couleur de fond au survol */
+      color: #de1002; /* Couleur du texte au survol */
+    }
+
+    .errorlist {
+      color: #ff4d4d; /* Couleur des messages d'erreur */
+      margin-top: 10px;
+      text-align: left; /* Alignement à gauche pour les messages d'erreur */
+    }
+
+    .error-message {
+      margin-bottom: 10px; /* Espacement entre les messages d'erreur */
+    }
+  </style>
+
+  <div class="registration-container">
+    <h2>Créer un compte</h2>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.username|add_class:"form-control" }}
+      {{ form.email|add_class:"form-control" }}
+      {{ form.password1|add_class:"form-control" }}
+      {{ form.password2|add_class:"form-control" }}
+
+      <!-- Affichage des messages d'erreur pour les mots de passe -->
+      {% if form.password1.errors %}
+        <div class="errorlist">
+          <div class="error-message">{{ form.password1.errors }}</div>
+        </div>
+      {% endif %}
+      {% if form.password2.errors %}
+        <div class="errorlist">
+          <div class="error-message">{{ form.password2.errors }}</div>
+        </div>
+      {% endif %}
+
+      <button type="submit">S'inscrire</button>
+    </form>
+    
+    {% if form.non_field_errors %}
+      <div class="errorlist">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    // Ajout des placeholders
+    document.addEventListener("DOMContentLoaded", function() {
+      document.querySelector('.form-control[name="username"]').setAttribute("placeholder", "Nom d'utilisateur");
+      document.querySelector('.form-control[name="email"]').setAttribute("placeholder", "Adresse e-mail");
+      document.querySelector('.form-control[name="password1"]').setAttribute("placeholder", "Mot de passe");
+      document.querySelector('.form-control[name="password2"]').setAttribute("placeholder", "Confirmer le mot de passe");
+    });
+  </script>
+{% endblock %}
