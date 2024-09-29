@@ -26,6 +26,8 @@ urlpatterns = [path('', views.index, name='index'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),     
     path('profile/', views.profile, name='profile'),
+    path('recommend-similar/', views.recommend_similar_movies, name='recommend_similar_movies'),
+    path('generate-image/', views.generate_image, name='generate_image'),
 
 ]
 handler404 = 'ForjaApp.views.custom_404_view'  

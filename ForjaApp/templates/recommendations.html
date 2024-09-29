@@ -1,0 +1,114 @@
+{% extends "base_generic.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #010102; /* Couleur de fond sombre */
+        color: #ffffff; /* Couleur du texte */
+        font-family: 'Rajdhani', sans-serif; /* Police personnalisée */
+        padding: 20px; /* Ajout de marges */
+        text-align: center; /* Centrer le contenu */
+    }
+
+    h1 {
+        margin-bottom: 20px;
+        color: #de1002; /* Couleur du titre */
+        font-size: 32px; /* Taille de la police */
+    }
+
+    form {
+        margin-bottom: 30px; /* Marge sous le formulaire */
+        background-color: rgba(25, 26, 29, 0.8); /* Fond du formulaire */
+        padding: 20px; /* Espacement interne */
+        border-radius: 8px; /* Coins arrondis */
+        display: inline-block; /* Centrer le formulaire */
+        width: 300px; /* Largeur du formulaire */
+    }
+
+    label {
+        display: block; /* Chaque label sur une nouvelle ligne */
+        margin-bottom: 10px; /* Espacement entre le label et le champ */
+        color: #ffffff; /* Couleur des labels */
+        font-size: 18px; /* Taille de la police des labels */
+    }
+
+    input[type="text"] {
+        width: 100%; /* Largeur complète */
+        padding: 10px; /* Espacement interne */
+        margin-bottom: 15px; /* Espacement sous le champ */
+        border: 1px solid #27292d; /* Bordure du champ */
+        border-radius: 4px; /* Coins arrondis */
+        background-color: rgba(0, 0, 0, 0.6); /* Fond du champ */
+        color: #999; /* Couleur du texte dans le champ */
+    }
+
+    button[type="submit"] {
+        background: #de1002; /* Couleur du bouton */
+        color: #fff; /* Couleur du texte du bouton */
+        padding: 10px 15px; /* Espacement interne */
+        border: none; /* Pas de bordure */
+        border-radius: 4px; /* Coins arrondis */
+        cursor: pointer; /* Curseur pointeur */
+        transition: background-color 0.3s; /* Transition pour effet au survol */
+        width: 100%; /* Largeur complète */
+        font-size: 16px; /* Taille de la police du bouton */
+    }
+
+    button[type="submit"]:hover {
+        background: #fff; /* Couleur de fond au survol */
+        color: #de1002; /* Couleur du texte au survol */
+    }
+
+    h2 {
+        margin-top: 40px; /* Marge supérieure */
+        color: #de1002; /* Couleur du titre de la liste */
+        font-size: 24px; /* Taille de la police */
+    }
+
+    ul {
+        list-style-type: none; /* Supprimer les puces de la liste */
+        padding: 0; /* Supprimer le padding */
+    }
+
+    li {
+        background-color: rgba(25, 26, 29, 0.8); /* Fond des éléments de la liste */
+        padding: 15px; /* Espacement interne */
+        border-radius: 8px; /* Coins arrondis */
+        margin-bottom: 20px; /* Espacement entre les éléments */
+        text-align: left; /* Alignement à gauche du texte */
+    }
+
+    img {
+        width: 100%; /* Image responsive */
+        max-width: 200px; /* Largeur maximale */
+        border-radius: 4px; /* Coins arrondis pour les images */
+    }
+
+    p {
+        color: #999; /* Couleur de la description des films */
+    }
+</style>
+
+<h1>Recommandations de Films Similaires</h1>
+
+<form method="POST">
+    {% csrf_token %}
+    <label for="movie_title">Entrez le titre d'un film:</label>
+    <input type="text" name="movie_title" required placeholder="Titre du film">
+    <button type="submit">Recommander</button>
+</form>
+
+{% if similar_movies %}
+    <h2>Films similaires à "{{ movie_title }}" :</h2>
+    <ul>
+        {% for movie in similar_movies %}
+            <li>
+                <strong>{{ movie.title }}</strong> ({{ movie.release_date }})<br>
+                <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" alt="{{ movie.title }} poster"><br>
+                <p>{{ movie.overview }}</p>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+{% endblock %}

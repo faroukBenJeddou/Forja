@@ -1,0 +1,90 @@
+{% extends "base_generic.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+<style>
+    .content-container {
+        max-width: 600px; /* Largeur maximale du contenu */
+        margin: 0 auto; /* Centrer le contenu */
+        padding: 20px; /* Espacement interne */
+        background-color: rgba(25, 26, 29, 0.8); /* Fond du conteneur */
+        border-radius: 8px; /* Coins arrondis */
+        color: #ffffff; /* Couleur du texte */
+        font-family: 'Rajdhani', sans-serif; /* Police personnalisée */
+    }
+
+    h1 {
+        text-align: center; /* Centrer le titre */
+        color: #de1002; /* Couleur du titre */
+        margin-bottom: 20px; /* Marge sous le titre */
+    }
+
+    label {
+        display: block; /* Chaque label sur une nouvelle ligne */
+        margin-bottom: 10px; /* Espacement sous le label */
+        font-size: 16px; /* Taille de la police des labels */
+    }
+
+    textarea {
+        width: 100%; /* Largeur complète */
+        height: 100px; /* Hauteur du textarea */
+        padding: 10px; /* Espacement interne */
+        margin-bottom: 15px; /* Espacement sous le textarea */
+        border: 1px solid #27292d; /* Bordure du textarea */
+        border-radius: 4px; /* Coins arrondis */
+        background-color: rgba(0, 0, 0, 0.6); /* Fond du textarea */
+        color: #999; /* Couleur du texte dans le textarea */
+        resize: none; /* Désactiver le redimensionnement */
+    }
+
+    button[type="submit"] {
+        background: #de1002; /* Couleur du bouton */
+        color: #fff; /* Couleur du texte du bouton */
+        padding: 10px 15px; /* Espacement interne */
+        border: none; /* Pas de bordure */
+        border-radius: 4px; /* Coins arrondis */
+        cursor: pointer; /* Curseur pointeur */
+        transition: background-color 0.3s; /* Transition pour effet au survol */
+        width: 100%; /* Largeur complète */
+        font-size: 16px; /* Taille de la police du bouton */
+    }
+
+    button[type="submit"]:hover {
+        background: #fff; /* Couleur de fond au survol */
+        color: #de1002; /* Couleur du texte au survol */
+    }
+
+    h2 {
+        text-align: center; /* Centrer le titre de l'image générée */
+        color: #de1002; /* Couleur du titre */
+        margin-top: 40px; /* Marge supérieure */
+    }
+
+    img {
+        display: block; /* Éviter le comportement inline des images */
+        max-width: 100%; /* Largeur maximale */
+        height: auto; /* Hauteur automatique pour garder les proportions */
+        margin: 20px auto; /* Centrer l'image avec une marge */
+        border-radius: 4px; /* Coins arrondis pour l'image */
+    }
+</style>
+
+<div class="content-container">
+    <h1>Génération d'Image</h1>
+    <form method="POST" action="{% url 'generate_image' %}">
+        {% csrf_token %}
+        <label for="description">Entrez votre description :</label>
+        <textarea id="description" name="description" required placeholder="Décrivez l'image que vous souhaitez générer..."></textarea>
+        <button type="submit">Générer l'image</button>
+    </form>
+
+    {% if error_message %}
+    <p style="color: red;">{{ error_message }}</p>
+{% endif %}
+
+{% if image_url %}
+    <h2>Image générée :</h2>
+    <img src="{{ image_url }}" alt="Image générée" />
+{% endif %}
+</div>
+{% endblock %}
