@@ -9,8 +9,28 @@ from .utils import get_similar_movies
 from .models import Recommendation
 from .models import Movie 
 import re
+import requests
+import random
+
+API_KEY = '89a4748b3788935d5e08221e4ed6f7ef'
+def range_1_to_5():
+    return range(1, 6)
 def index(request):
-    return render(request, 'index.html')
+    url = f'https://api.themoviedb.org/3/movie/popular?api_key={API_KEY}&language=en-US&page=1'
+    response = requests.get(url)
+    movies = response.json().get('results', [])
+
+    # Préparer l'URL de base des images
+    image_base_url = 'https://image.tmdb.org/t/p/w500/'
+
+    # Ajouter l'URL complète pour chaque image de film et calculer la note moyenne sur 2
+    for movie in movies:
+        movie['poster_url'] = image_base_url + movie.get('poster_path', '')
+        movie['vote_average_div_2'] = movie['vote_average'] / 2
+
+    context = {'movies': movies[:8], 'range_1_to_5': range(1, 6)}  # Limiter à 8 films
+    return render(request, 'index.html', context)
+
 # views.py
 
 
@@ -73,7 +93,7 @@ def recommend_similar_movies(request):
         # Si le film n'est pas trouvé, l'ajouter à la base de données
         if not movie:
             # Utiliser le premier film similaire pour créer une nouvelle entrée de film
-            if similar_movies:  # Vérifiez qu'il y a des films similaires
+            if similar_movies:  # Vérifier qu'il y a des films similaires
                 movie_data = similar_movies[0]  # Prenons le premier film similaire
 
                 # Créer une nouvelle instance de Movie
@@ -102,14 +122,20 @@ def generate_image(request):
 
     if request.method == 'POST':
         description = request.POST.get('description')
+        selected_style = request.POST.get('style')  # Récupérer le style sélectionné
 
         # Liste de mots-clés associés aux films
-        movie_keywords = ['film', 'movie', 'character', 'plot', 'scene', 'actor', 'actress', 'director', 'genre', 'cinema', 'trailer']
+        movie_keywords = [
+            'film', 'movie', 'character', 'plot', 'scene', 'actor', 
+            'actress', 'director', 'genre', 'cinema', 'trailer'
+        ]
 
         # Vérifier si la description contient des mots-clés de film
         if any(re.search(r'\b' + keyword + r'\b', description, re.IGNORECASE) for keyword in movie_keywords):
-            image_url = f"https://image.pollinations.ai/prompt/{description}"
+            # Ajouter le style de dessin à la description
+            modified_description = f"{description}, {selected_style}"
+            image_url = f"https://image.pollinations.ai/prompt/{modified_description}"
         else:
-            error_message = "Veuillez entrer une description liée aux films."
+            error_message = "Veuillez entrer une description liée aux films ou personnages de films."
 
     return render(request, 'image_generator.html', {'image_url': image_url, 'error_message': error_message})
