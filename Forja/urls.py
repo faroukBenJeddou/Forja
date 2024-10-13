@@ -28,6 +28,8 @@ urlpatterns = [path('', views.index, name='index'),
     path('profile/', views.profile, name='profile'),
     path('recommend-similar/', views.recommend_similar_movies, name='recommend_similar_movies'),
     path('generate-image/', views.generate_image, name='generate_image'),
-
+    path('movie-ending/', views.movie_ending_view, name='movie_ending'),
+    path('song-writer/', views.song_writer_view, name='song_writer'),
+    
 ]
 handler404 = 'ForjaApp.views.custom_404_view'  

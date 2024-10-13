@@ -1,0 +1,33 @@
+{% extends "base_generic.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Writer</title>
+</head>
+<body>
+    <h1>AI Song Writer</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <label for="prompt">Enter a song theme or prompt:</label>
+        <input type="text" id="prompt" name="prompt" required>
+        <button type="submit">Generate Song</button>
+    </form>
+
+    {% if generated_lyrics %}
+        <h2>Generated Lyrics:</h2>
+        <p>{{ generated_lyrics }}</p>
+    {% endif %}
+
+    {% if audio_url %}
+        <h2>Generated Audio:</h2>
+        <audio controls>
+            <source src="{{ audio_url }}" type="audio/mp3">
+            Your browser does not support the audio element.
+        </audio>
+    {% endif %}
+</body>
+{% endblock %}
