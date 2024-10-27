@@ -1,22 +1,19 @@
-from django.shortcuts import render
-from django.shortcuts import render, redirect
+from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
 from .forms import UserRegisterForm
 from django.contrib.auth.decorators import login_required
 from .utils import get_similar_movies
-from .models import Recommendation
-from .models import Movie 
-import re
-import requests
-import random
-import openai
-import requests
+from .models import Movie, Recommendation,UserFeedback
+import re,requests,random,openai
 from django.http import JsonResponse
 from groq import Groq
 import os
 from django.conf import settings
+#import numpy as np
+#from sklearn.metrics.pairwise import cosine_similarity
+
 client = Groq(api_key='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')
 openai.api_key = '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'
 openai.api_base = "https://api.groq.com/openai/v1"
@@ -84,12 +81,37 @@ def profile(request):
 
 from django.shortcuts import render
 
-def custom_404_view(request, exception):
-    return render(request, '404.html', status=404)
+@login_required
+def user_feedback_management(request):
+    feedbacks = UserFeedback.objects.filter(user=request.user)
+
+    if request.method == 'POST':
+        # Traitement de l'édition
+        if 'save' in request.POST:
+            feedback_id = request.POST.get('save')
+            feedback_text = request.POST.get(f'feedback_text_{feedback_id}')
+            rating = request.POST.get(f'rating_{feedback_id}')
+            feedback = get_object_or_404(UserFeedback, id=feedback_id, user=request.user)
+            feedback.feedback_text = feedback_text
+            feedback.rating = rating
+            feedback.save()
+
+        # Traitement de la suppression
+        elif 'delete' in request.POST:
+            feedback_id = request.POST.get('delete')
+            feedback = get_object_or_404(UserFeedback, id=feedback_id, user=request.user)
+            feedback.delete()
+
+        return redirect('user_feedback_management')  # Redirection après modification ou suppression
+
+    return render(request, 'user_feedback_management.html', {
+        'feedbacks': feedbacks
+    })
 @login_required
 def recommend_similar_movies(request):
     similar_movies = []
     movie_title = ""
+    recommendation = None  # Initialiser la variable recommendation
 
     if request.method == 'POST':
         movie_title = request.POST.get('movie_title')
@@ -123,9 +145,10 @@ def recommend_similar_movies(request):
                 similar_movies=[{"title": m['title'], "id": m['id']} for m in similar_movies]  # Enregistrer les titres et IDs des films similaires
             )
 
-        return render(request, 'recommendations.html', {'similar_movies': similar_movies, 'movie_title': movie_title})
+        return render(request, 'recommendations.html', {'similar_movies': similar_movies, 'movie_title': movie_title, 'recommendation': recommendation})
 
-    return render(request, 'recommendations.html', {'similar_movies': similar_movies, 'movie_title': movie_title})
+    return render(request, 'recommendations.html', {'similar_movies': similar_movies, 'movie_title': movie_title, 'recommendation': recommendation})
+
 def generate_image(request):
 
     image_url = None
@@ -286,4 +309,126 @@ def song_writer_view(request):
     return render(request, 'song_writer.html', {
         'generated_lyrics': generated_lyrics,
         'audio_url': audio_url
-    })
+    }) 
+
+def create_ratings_matrix():
+    ratings = Rating.objects.all()
+    ratings_data = {
+        'user_id': [],
+        'movie_id': [],
+        'score': []
+    }
+
+    for rating in ratings:
+        ratings_data['user_id'].append(rating.user.id)
+        ratings_data['movie_id'].append(rating.movie.id)
+        ratings_data['score'].append(rating.score)
+
+    ratings_df = pd.DataFrame(ratings_data)
+    
+    # Créer une matrice d'évaluations
+    ratings_matrix = ratings_df.pivot_table(index='user_id', columns='movie_id', values='score').fillna(0)
+
+    return ratings_matrix
+
+def get_recommendations_(user_id, num_recommendations=5):
+    # Créer la matrice d'évaluations
+    ratings_matrix = create_ratings_matrix()
+
+    # Calculer la similarité cosinus entre les utilisateurs
+    similarity_matrix = cosine_similarity(ratings_matrix)
+
+    # Trouver l'indice de l'utilisateur
+    user_index = ratings_matrix.index.get_loc(user_id)
+
+    # Obtenir les scores de similarité pour l'utilisateur donné
+    similar_scores = similarity_matrix[user_index]
+
+    # Trouver les utilisateurs les plus similaires
+    similar_users_indices = similar_scores.argsort()[::-1][1:num_recommendations + 1]
+
+    recommended_movies = []
+    
+    # Parcourir les utilisateurs similaires pour recommander des films
+    for similar_user_index in similar_users_indices:
+        similar_user_id = ratings_matrix.index[similar_user_index]
+        similar_user_ratings = ratings_matrix.loc[similar_user_id]
+
+        # Obtenir les films non évalués par l'utilisateur courant
+        non_rated_movies = similar_user_ratings[similar_user_ratings > 0].index
+
+        # Ajouter les films recommandés à la liste
+        recommended_movies.extend(non_rated_movies)
+
+    # Éliminer les doublons et limiter le nombre de recommandations
+    recommended_movies = list(set(recommended_movies))[:num_recommendations]
+
+    return recommended_movies
+
+@login_required
+def recommend_similar(request):
+    similar_movies = []
+    movie_title = ""
+
+    if request.method == 'POST':
+        movie_title = request.POST.get('movie_title')
+
+        # Vous pouvez remplacer ceci par votre propre logique pour obtenir des films similaires
+        similar_movies = get_similar_movies(movie_title)  # Assurez-vous d'avoir cette fonction définie
+
+        # Vérifier si le film est trouvé dans la base de données
+        movie = Movie.objects.filter(title__icontains=movie_title).first()
+
+        # Si le film n'est pas trouvé, l'ajouter à la base de données
+        if not movie:
+            if similar_movies:
+                movie_data = similar_movies[0]
+                movie = Movie(
+                    title=movie_data['title'],
+                    release_date=movie_data['release_date'],
+                    overview=movie_data['overview'],
+                    poster_path=movie_data['poster_path']
+                )
+                movie.save()
+
+        # Si le film est trouvé ou a été ajouté, enregistrer la recommandation
+        if movie:
+            # Obtenir les recommandations pour l'utilisateur
+            recommended_movie_ids = get_recommendations(request.user.id)
+
+            # Récupérer les films recommandés à partir des IDs
+            similar_movies = Movie.objects.filter(id__in=recommended_movie_ids)
+
+            Recommendation.objects.create(
+                user=request.user,
+                movie=movie,
+                similar_movies=[{"title": m.title, "id": m.id} for m in similar_movies]
+            )
+
+        return render(request, 'recommendations.html', {'similar_movies': similar_movies, 'movie_title': movie_title})
+
+    return render(request, 'recommendations.html', {'similar_movies': similar_movies, 'movie_title': movie_title,'recommendation': recommendation})
+
+
+@login_required
+def submit_feedback(request):
+    if request.method == 'POST':
+        recommendation_id = request.POST.get('recommendation_id')
+        feedback_text = request.POST.get('feedback_text')
+        rating = request.POST.get('rating')
+
+        if recommendation_id:  # Check if recommendation_id is not empty
+            try:
+                recommendation = Recommendation.objects.get(id=recommendation_id)
+                UserFeedback.objects.create(user = request.user,  # Get the currently logged-in user
+                    recommendation=recommendation,
+                    feedback_text=feedback_text,
+                    rating=rating
+                )
+                messages.success(request, 'Feedback submitted successfully!')
+                return redirect('index')  # Or wherever you want to redirect
+            except Recommendation.DoesNotExist:
+                messages.error(request, 'Recommendation not found.')
+        else:
+            messages.error(request, 'Recommendation ID cannot be empty.')
+    return redirect('index')  # Redirect if the method is not POST

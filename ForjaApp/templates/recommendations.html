@@ -33,7 +33,7 @@
         font-size: 18px; /* Taille de la police des labels */
     }
 
-    input[type="text"] {
+    input[type="text"], textarea, select {
         width: 100%; /* Largeur complète */
         padding: 10px; /* Espacement interne */
         margin-bottom: 15px; /* Espacement sous le champ */
@@ -91,7 +91,6 @@
 </style>
 
 <h1>Recommandations de Films Similaires</h1>
-
 <form method="POST">
     {% csrf_token %}
     <label for="movie_title">Entrez le titre d'un film:</label>
@@ -110,5 +109,61 @@
             </li>
         {% endfor %}
     </ul>
+    <button class="btn btn-primary" onclick="openFeedbackModal('{{ recommendation.id }}')">Donner un avis</button>
+
+    <!-- Modal Feedback -->
+    <div class="modal fade" id="feedbackModal" tabindex="-1" role="dialog" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="feedbackModalLabel">Donnez votre avis</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form method="POST" action="{% url 'submit_feedback' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="recommendation_id" id="recommendation_id" value="">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="feedback_text">Votre avis :</label>
+                            <textarea name="feedback_text" required class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="rating">Évaluation :</label>
+                            <select name="rating" required class="form-control">
+                                <option value="1">1 étoile</option>
+                                <option value="2">2 étoiles</option>
+                                <option value="3">3 étoiles</option>
+                                <option value="4">4 étoiles</option>
+                                <option value="5">5 étoiles</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+                        <button type="submit" class="btn btn-primary">Soumettre</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 {% endif %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- jQuery -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> <!-- Bootstrap JS -->
+
+<script>
+ function openFeedbackModal(recommendationId) {
+    console.log('Recommendation ID:', recommendationId);  // Debug log
+    if (recommendationId) {
+        document.getElementById('recommendation_id').value = recommendationId;
+    } else {
+        console.error('No recommendation ID provided');
+    }
+    $('#feedbackModal').modal('show');
+}
+</script>
+{% endblock %}
 {% endblock %}

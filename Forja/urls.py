@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path
 from ForjaApp import views
 from django.conf.urls import handler404
+from ForjaApp.views import submit_feedback  # Import the view
 
 
 urlpatterns = [path('', views.index, name='index'),
@@ -30,6 +31,7 @@ urlpatterns = [path('', views.index, name='index'),
     path('generate-image/', views.generate_image, name='generate_image'),
     path('movie-ending/', views.movie_ending_view, name='movie_ending'),
     path('song-writer/', views.song_writer_view, name='song_writer'),
-    
+    path('submit-feedback/', views.submit_feedback, name='submit_feedback'),
+    path('user-feedback/', views.user_feedback_management, name='user_feedback_management'),
+
 ]
-handler404 = 'ForjaApp.views.custom_404_view'  

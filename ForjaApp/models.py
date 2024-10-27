@@ -38,3 +38,15 @@ class ArtisticDescription(models.Model):
 
     def __str__(self):
         return f"Description for {self.movie.title}"
+
+
+
+class UserFeedback(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    recommendation = models.ForeignKey(Recommendation, on_delete=models.CASCADE)
+    feedback_text = models.TextField()
+    rating = models.IntegerField(choices=[(1, '1 étoile'), (2, '2 étoiles'), (3, '3 étoiles'), (4, '4 étoiles'), (5, '5 étoiles')])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Feedback from {self.user.username} on {self.recommendation.movie.title}"
