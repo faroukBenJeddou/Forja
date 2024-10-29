@@ -1,19 +1,51 @@
+import base64
+
+from PIL import Image
 from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
-from .forms import UserRegisterForm
+from django.views.decorators.csrf import csrf_exempt
+from platform import processor
+import torch
+from transformers import CLIPModel, CLIPProcessor
+from django.db.models import Avg
+from .models import Rating, WatchLater, CinemaRating, Artist, Role
+from .forms import UserRegisterForm, RatingForm, CinemaRatingForm, ArtistForm, RoleForm, ChatBot
+import google.generativeai as genai
+
+from .forms import UserRegisterForm, GenreForm, MovieForm
 from django.contrib.auth.decorators import login_required
 from .utils import get_similar_movies
-from .models import Movie, Recommendation,UserFeedback
+from .models import Movie, Recommendation, UserFeedback, Genre, Cinema
 import re,requests,random,openai
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from groq import Groq
+import requests
+import time
 import os
 from django.conf import settings
-#import numpy as np
-#from sklearn.metrics.pairwise import cosine_similarity
+from .models import Post, Comment
+from .forms import PostForm, CommentForm
+from django.core.paginator import Paginator
+from django.urls import reverse
+from nltk.sentiment import SentimentIntensityAnalyzer
+import nltk
+import speech_recognition as sr
+from django.shortcuts import reverse
 
+# Ensure VADER lexicon is downloaded
+nltk.download('vader_lexicon', quiet=True)
+
+# Create an instance of SentimentIntensityAnalyzer
+sia = SentimentIntensityAnalyzer()
+
+
+AI_API_URL = "https://api.openai.com/v1/chat/completions"
+AI_API_KEY = os.getenv('OPENAI_API_KEY')
+
+model = CLIPModel.from_pretrained("openai/clip-vit-base-patch16")
+processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch16")
 client = Groq(api_key='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')
 openai.api_key = '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'
 openai.api_base = "https://api.groq.com/openai/v1"
@@ -23,19 +55,38 @@ BASE_URL = 'https://suno-apiv2-eight.vercel.app'
 def range_1_to_5():
     return range(1, 6)
 def index(request):
+    # Fetch popular movies from the API
     url = f'https://api.themoviedb.org/3/movie/popular?api_key={API_KEY}&language=en-US&page=1'
     response = requests.get(url)
-    movies = response.json().get('results', [])
+    api_movies = response.json().get('results', [])
 
-    # Préparer l'URL de base des images
+    # Prepare the image base URL
     image_base_url = 'https://image.tmdb.org/t/p/w500/'
 
-    # Ajouter l'URL complète pour chaque image de film et calculer la note moyenne sur 2
-    for movie in movies:
+    # Add the complete URL for each movie image from the API
+    for movie in api_movies:
         movie['poster_url'] = image_base_url + movie.get('poster_path', '')
         movie['vote_average_div_2'] = movie['vote_average'] / 2
 
-    context = {'movies': movies[:8], 'range_1_to_5': range(1, 6)}  # Limiter à 8 films
+    # Get all genres for filtering
+    genres = Genre.objects.all()
+    selected_genre = request.GET.get('genre')
+
+    # Use movie_list logic to filter database movies
+    if selected_genre:
+        database_movies = Movie.objects.filter(genres__name=selected_genre)[:4]
+    else:
+        database_movies = Movie.objects.all()[:4]
+
+    # Prepare context
+    context = {
+        'movies': api_movies[:8],  # Limit to 8 API movies
+        'database_movies': database_movies,  # Movies from the database
+        'genres': genres,  # All genres for the filter
+        'selected_genre': selected_genre,
+        'range_1_to_5': range(1, 6)
+    }
+
     return render(request, 'index.html', context)
 
 # views.py
@@ -237,6 +288,11 @@ def movie_ending_view(request):
 
     return render(request, "movie_ending.html")
 
+
+def services(request):
+    return render(request, 'services.html')
+
+
 def generate_audio_by_prompt(prompt):
     """Send prompt to the Vercel API to generate audio."""
     url = f"{BASE_URL}/api/generate"
@@ -365,6 +421,86 @@ def get_recommendations_(user_id, num_recommendations=5):
 
     return recommended_movies
 
+@csrf_exempt
+def get_movie_summary_and_ending(request):
+    if request.method == 'POST':
+        movie_title = request.POST.get('movie_title')
+        if not movie_title:
+            return JsonResponse({'error': 'No movie title provided'}, status=400)
+
+        omdb_api_key = 'dc75851e'
+        omdb_url = f'https://www.omdbapi.com/?t={movie_title}&apikey={omdb_api_key}'
+
+        try:
+            response = requests.get(omdb_url)
+            data = response.json()
+
+            if data.get('Response') == 'True':
+                plot = data.get('Plot', 'No plot found.')
+                # Generate a different ending using the correct function
+                alternative_ending = generate_different_ending(plot)
+
+                return JsonResponse({
+                    'title': data['Title'],
+                    'summary': plot,
+                    'alternative_ending': alternative_ending
+                })
+
+            return JsonResponse({'error': 'Movie not found'}, status=404)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+def generate_different_ending(original_plot):
+    ai_api_token = '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'  # Your Hugging Face API token
+    ai_api_url = 'https://api-inference.huggingface.co/models/distilgpt2'  # Using distilgpt2 model
+
+    headers = {
+        'Authorization': f'Bearer {ai_api_token}',
+        'Content-Type': 'application/json'
+    }
+
+    # Clearer prompt
+    prompt = (
+        f"Plot Summary: {original_plot}\n"
+        "Let's Imagine a different ending for this movie, one that changes the outcome entirely. "
+
+    )
+
+    payload = {
+        'inputs': prompt,
+        'parameters': {
+            'max_length': 150,  # Increased for more room to generate
+            'temperature': 0.9,  # More creative variations
+            'top_k': 50,  # Sampling top k tokens for diversity
+            'top_p': 0.95,  # Nucleus sampling
+        }
+    }
+
+    response = requests.post(ai_api_url, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        response_json = response.json()
+        if isinstance(response_json, list) and len(response_json) > 0:
+            return response_json[0]['generated_text'].strip()  # Remove leading/trailing whitespace
+        else:
+            return "Could not generate an ending at this time."
+    else:
+        return f"API Error: {response.status_code}, {response.text}"
+
+def add_genre(request):
+    if request.method == 'POST':
+        form = GenreForm(request.POST)
+        if form.is_valid():
+            form.save()  # Save the new genre
+            return redirect('add_genre')  # Redirect back to the genre add page
+    else:
+        form = GenreForm()
+
+    return render(request, 'add_genre.html', {'form': form})
+
 @login_required
 def recommend_similar(request):
     similar_movies = []
@@ -409,6 +545,67 @@ def recommend_similar(request):
 
     return render(request, 'recommendations.html', {'similar_movies': similar_movies, 'movie_title': movie_title,'recommendation': recommendation})
 
+@csrf_exempt
+def movie_recognition(request):
+    if request.method == 'POST':
+        image_file = request.FILES.get('image')
+        if image_file:
+            try:
+                # Open the image using PIL
+                image = Image.open(image_file).convert("RGB")
+
+                # Prepare a more extensive list of relevant movie titles
+                movie_titles = [
+                    'The Dark Knight',
+                    'Batman',
+                    'Batman Begins',
+                    'The Dark Knight Rises',
+                    'Joker',
+                    'Suicide Squad',
+                    'The Killing Joke',
+                    'Batman vs. Superman: Dawn of Justice',
+                    'Titanic',
+                    'Inception',
+                    'Gladiator',
+                    'Jurassic Park',
+                    'Iron Man',
+                    'The Avengers',
+
+                    # Add more relevant titles as needed
+                ]
+
+                # Process the image and text
+                inputs = processor(text=movie_titles, images=image, return_tensors="pt", padding=True)
+
+                # Make predictions
+                with torch.no_grad():
+                    outputs = model(**inputs)
+                    logits_per_image = outputs.logits_per_image
+                    probs = logits_per_image.softmax(dim=1)
+
+                # Get the top K predictions
+                top_k_indices = probs[0].topk(5)
+                results = [
+                    {"title": movie_titles[i.item()], "probability": probs[0][i].item()}
+                    for i in top_k_indices.indices
+                ]
+
+                # Adjust the probability threshold for filtering
+                threshold = 0.15  # Try different values based on testing
+                filtered_results = [
+                    result for result in results if result['probability'] >= threshold
+                ]
+
+                # Optional: Add logic to include related titles if certain ones are found
+                if any("The Dark Knight" in result['title'] for result in filtered_results):
+                    filtered_results.append({"title": "Batman", "probability": 0.8})  # Example addition
+
+                return JsonResponse({"results": filtered_results})
+            except Exception as e:
+                print(f"Error processing the image: {e}")
+                return JsonResponse({"error": str(e)}, status=500)
+
+    return render(request, 'movie_recognition.html')
 
 @login_required
 def submit_feedback(request):
@@ -432,3 +629,445 @@ def submit_feedback(request):
         else:
             messages.error(request, 'Recommendation ID cannot be empty.')
     return redirect('index')  # Redirect if the method is not POST
+def movie_list(request):
+    genres = Genre.objects.all()  # Get all genres
+    selected_genre = request.GET.get('genre')
+
+    if selected_genre:
+        movies = Movie.objects.filter(genres__name=selected_genre)
+    else:
+        movies = Movie.objects.all()  # Get all movies if no genre is selected
+
+    return render(request, 'movie_list.html', {
+        'movies': movies,
+        'genres': genres,  # Make sure genres are passed here
+        'selected_genre': selected_genre
+    })
+@login_required
+def movie_create(request):
+    if request.method == 'POST':
+        form = MovieForm(request.POST, request.FILES)  # Include request.FILES for image upload
+        if form.is_valid():
+            movie = form.save(commit=False)  # Create the movie instance but don't save yet
+            movie.save()  # Save the movie instance
+            form.save_m2m()  # Save the many-to-many relationships (genres)
+            print("Movie saved successfully!")  # Debug line
+            return redirect('index')  # Redirect to the index page after saving
+        else:
+            print("Form errors:", form.errors)  # Debug line to see form errors
+    else:
+        form = MovieForm()
+
+    return render(request, 'add_movie.html', {'form': form})  # Render the form
+@login_required
+def update_movie(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+
+    if request.method == 'POST':
+        form = MovieForm(request.POST, request.FILES, instance=movie)  # Include request.FILES for file uploads
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Movie updated successfully!')
+            return redirect('index')  # Ensure 'index' is a valid URL name
+    else:
+        form = MovieForm(instance=movie)  # Pre-populate the form with existing movie data
+
+    return render(request, 'update_movie.html', {'form': form, 'movie': movie})
+# Delete Movie
+@login_required
+def delete_movie(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+    if request.method == 'POST':
+        movie.delete()
+        messages.success(request, 'Movie deleted successfully!')
+        return redirect('index')
+    return render(request, 'delete_movie.html', {'movie': movie})
+def voice_search(request):
+    if request.method == 'POST':
+        # Here, implement the voice recognition logic
+        recognizer = sr.Recognizer()
+        with sr.Microphone() as source:
+            print("Listening...")
+            audio = recognizer.listen(source)
+            try:
+                query = recognizer.recognize_google(audio)
+                print("You said: " + query)
+                # Search your Movie model
+                results = Movie.objects.filter(title__icontains=query)
+                return render(request, 'search_results.html', {'results': results})
+            except sr.UnknownValueError:
+                return render(request, 'voice_search.html', {'error': "Could not understand audio"})
+            except sr.RequestError:
+                return render(request, 'voice_search.html',
+                              {'error': "Could not request results from Google Speech Recognition service"})
+
+VIDSRC_API_URL = "https://vidsrc.xyz/embed/movie"
+TMDB_API_KEY = '89a4748b3788935d5e08221e4ed6f7ef'
+
+
+def movie_detail(request, movie_id):
+    # Get the movie from the database
+    movie = get_object_or_404(Movie, id=movie_id)
+
+    # Fetch the TMDB ID using the movie title
+    tmdb_id = get_tmdb_id(movie.title)
+
+    # If a TMDB ID is found, get the streaming URL
+    streaming_url = None
+    if tmdb_id:
+        streaming_url = f"https://vidsrc.xyz/embed/movie?tmdb={tmdb_id}"
+
+    return render(request, 'movie_detail.html', {
+        'movie': movie,
+        'streaming_url': streaming_url,
+    })
+
+def get_tmdb_id(movie_title):
+    try:
+        # Search for the movie by title in the TMDB API
+        search_url = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={movie_title}"
+        search_response = requests.get(search_url).json()
+
+        if search_response['results']:
+            tmdb_id = search_response['results'][0]['id']  # Get the TMDB ID of the first result
+            print(f"TMDB ID for '{movie_title}': {tmdb_id}")  # Log the TMDB ID
+            return tmdb_id
+
+    except Exception as e:
+        print(f"Error retrieving TMDB ID: {e}")
+
+    return None
+
+@login_required
+def rate_movie(request, movie_id):
+    movie = get_object_or_404(Movie, id=movie_id)
+
+    ratings = Rating.objects.filter(movie=movie).order_by('-date_rated')
+
+    user_rating = Rating.objects.filter(movie=movie, user=request.user).first()
+
+    if request.method == 'POST':
+        form = RatingForm(request.POST)
+        if form.is_valid():
+            # Save or update the user's rating
+            if user_rating:
+                user_rating.score = form.cleaned_data['score']
+                user_rating.review = form.cleaned_data['review']
+                user_rating.save()
+            else:
+                rating = form.save(commit=False)
+                rating.movie = movie
+                rating.user = request.user
+                rating.save()
+
+            # Handle Watch Later checkbox
+            if 'watch_later' in request.POST:
+                # Add movie to Watch Later
+                WatchLater.objects.get_or_create(user=request.user, movie=movie)
+            else:
+                # Remove movie from Watch Later
+                WatchLater.objects.filter(user=request.user, movie=movie).delete()
+
+            return redirect('rate_movie', movie_id=movie.id)
+    else:
+        form = RatingForm() if not user_rating else None
+
+    return render(request, 'rate_movie.html', {
+        'movie': movie,
+        'form': form,
+        'ratings': ratings,
+        'user_rating': user_rating,
+    })
+
+def movieList(request):
+    movies = Movie.objects.annotate(average_rating=Avg('rating__score'))
+    return render(request, 'movie_list.html', {'movies': movies})
+
+
+
+def cinema_list(request):
+    cinemas = Cinema.objects.annotate(average_rating=Avg('cinemarating__score'))  # Annotate with average rating
+    return render(request, 'cinema_list.html', {'cinemas': cinemas})
+
+
+@login_required
+def rate_cinema(request, cinema_id):
+    cinema = get_object_or_404(Cinema, id=cinema_id)
+
+    # Get all ratings for the cinema
+    ratings = CinemaRating.objects.filter(cinema=cinema).order_by('-date_rated')
+
+    # Get the user's rating if it exists
+    user_rating = CinemaRating.objects.filter(cinema=cinema, user=request.user).first()
+
+    if request.method == 'POST':
+        form = CinemaRatingForm(request.POST)
+        if form.is_valid():
+            if user_rating:
+                # Update existing rating
+                user_rating.score = form.cleaned_data['score']
+                user_rating.review = form.cleaned_data['review']
+                user_rating.save()
+            else:
+                # Create a new rating
+                cinema_rating = form.save(commit=False)
+                cinema_rating.cinema = cinema
+                cinema_rating.user = request.user  # Ensure that the user is logged in
+                cinema_rating.save()
+
+            return redirect('rate_cinema', cinema_id=cinema.id)
+    else:
+        form = CinemaRatingForm() if not user_rating else None  # Use None if user_rating exists
+
+    return render(request, 'rate_cinema.html', {
+        'cinema': cinema,
+        'form': form,
+        'ratings': ratings,
+        'user_rating': user_rating,
+    })
+
+#########################################################################   khalil
+def create_artist(request):
+    if request.method == 'POST':
+        form = ArtistForm(request.POST, request.FILES)  # Handle file uploads
+        if form.is_valid():
+            artist = form.save()  # Save the artist instance
+            # Save the selected roles
+            form.cleaned_data['roles']  # This will contain the selected roles
+            artist.roles.set(form.cleaned_data['roles'])  # Assign the roles to the artist
+            return redirect('artist_list')  # Redirect to the artist list after saving
+    else:
+        form = ArtistForm()
+
+    return render(request, 'create_artist.html', {'form': form})
+
+
+# Lire la liste des artistes
+def artist_list(request):
+    artists = Artist.objects.all()
+    return render(request, 'artist_list.html', {'artists': artists})
+
+# Lire un artiste spécifique
+def artist_detail(request, pk):
+    artist = get_object_or_404(Artist, pk=pk)
+    return render(request, 'artist_detail.html', {'artist': artist})
+
+# Mettre à jour un artiste
+def update_artist(request, pk):
+    artist = get_object_or_404(Artist, pk=pk)
+    if request.method == 'POST':
+        form = ArtistForm(request.POST, instance=artist)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Artiste mis à jour avec succès.')
+            return redirect('artist_detail', pk=artist.pk)
+        else:
+            messages.error(request, 'Erreur lors de la mise à jour de l\'artiste.')
+    else:
+        form = ArtistForm(instance=artist)
+    return render(request, 'update_artist.html', {'form': form, 'artist': artist})
+
+# Supprimer un artiste
+def delete_artist(request, pk):
+    artist = get_object_or_404(Artist, pk=pk)
+    if request.method == 'POST':
+        artist.delete()
+        messages.success(request, 'Artiste supprimé avec succès.')
+        return redirect('artist_list')
+    return render(request, 'delete_artist.html', {'artist': artist})
+## VoRk6rXgydz4zAm7ng5F86Gt          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     4340a429-6c02-4795-9bf6-95f453bf84ba
+# remover/views.py
+def remove_background(request):
+    image_base64 = None  # Initialiser la variable d'image
+
+    if request.method == 'POST' and request.FILES.get('image'):
+        # Récupérer le fichier image
+        image_file = request.FILES['image']
+
+        # API key de votre compte Remove.bg
+        api_key = 'VoRk6rXgydz4zAm7ng5F86Gt'
+
+        # Préparer la requête à l'API Remove.bg
+        r = requests.post(
+            "https://api.remove.bg/v1.0/removebg",
+            files={'image_file': image_file},
+            headers={'X-Api-Key': api_key},
+            data={'size': 'auto'}
+        )
+
+        if r.status_code == requests.codes.ok:
+            # Convertir l'image binaire en Base64
+            image_base64 = base64.b64encode(r.content).decode('utf-8')
+
+    return render(request, 'upload.html', {'image': image_base64})  # Passer l'image au template
+
+
+
+
+
+def role_list(request):
+    roles = Role.objects.all()
+    return render(request, 'role_list.html', {'roles': roles})
+
+def role_create(request):
+    if request.method == 'POST':
+        form = RoleForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('role_list')
+    else:
+        form = RoleForm()
+    return render(request, 'role_form.html', {'form': form})
+
+def role_update(request, pk):
+    role = get_object_or_404(Role, pk=pk)
+    if request.method == 'POST':
+        form = RoleForm(request.POST, instance=role)
+        if form.is_valid():
+            form.save()
+            return redirect('role_list')
+    else:
+        form = RoleForm(instance=role)
+    return render(request, 'role_form.html', {'form': form})
+
+def role_delete(request, pk):
+    role = get_object_or_404(Role, pk=pk)
+    if request.method == 'POST':
+        role.delete()
+        return redirect('role_list')
+    return render(request, 'role_confirm_delete.html', {'role': role})
+
+genai.configure(api_key="AIzaSyA0DzNxZWLn56ELHdr-WaPLigFAztEUOLg")
+
+@login_required
+def ask_question(request):
+    if request.method == "POST":
+        text = request.POST.get("text")
+        model = genai.GenerativeModel("gemini-pro")
+        chat = model.start_chat()
+        response = chat.send_message(text)
+        user = request.user
+        ChatBot.objects.create(text_input=text, gemini_output=response.text, user=user)
+        # Extract necessary data from response
+        response_data = {
+            "text": response.text,  # Assuming response.text contains the relevant response data
+            # Add other relevant data from response if needed
+        }
+        return JsonResponse({"data": response_data})
+    else:
+        return HttpResponseRedirect(
+            reverse("chat")
+        )  # Redirect to chat page for GET requests
+
+
+def chat(request):
+    user = request.user
+    chats = ChatBot.objects.filter(user=user)
+    return render(request, "chat_bot.html", {"chats": chats})
+#######################################################################  AIzaSyA0DzNxZWLn56ELHdr-WaPLigFAztEUOLg
+
+@login_required
+def post_list(request):
+    """Display all posts with comments."""
+    posts = Post.objects.all().order_by('-created_at')
+    paginator = Paginator(posts, 2)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'post_list.html', {"page_obj": page_obj})
+
+
+@login_required
+def post_detail(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    comments = Comment.objects.filter(post=post)
+    form = CommentForm(request.POST or None)
+
+    if request.method == 'POST' and form.is_valid():
+        comment = form.save(commit=False)
+        comment.post = post
+        comment.author = request.user
+        comment.save()
+
+        # Analyze the comment using VADER
+        ai_analysis = analyze_comment_with_vader(comment.content)
+        comment.analysis = ai_analysis  # Store analysis in the comment
+        comment.save()
+
+        return redirect('post_detail', post_id=post.id)
+
+    return render(request, 'post_detail.html', {
+        'post': post,
+        'comments': comments,
+        'form': form,
+    })
+
+@login_required
+def update_comment(request, comment_id):
+    """Update an existing comment."""
+    comment = get_object_or_404(Comment, id=comment_id, author=request.user)
+    if request.method == 'POST':
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Comment updated successfully!")
+            return redirect('post_detail', post_id=comment.post.id)
+    else:
+        form = CommentForm(instance=comment)
+    return render(request, 'update_comment.html', {'form': form, 'comment': comment})
+
+@login_required
+def post_create(request):
+    if request.method == 'POST':
+        form = PostForm(request.POST)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.author = request.user
+            post.save()
+            return redirect('post_list')
+    else:
+        form = PostForm()
+    return render(request, 'post_form.html', {'form': form})
+
+@login_required
+def post_update(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if request.user != post.author:
+        return redirect('post_detail', post_id=post.id)
+
+    if request.method == 'POST':
+        form = PostForm(request.POST, instance=post)
+        if form.is_valid():
+            form.save()
+            return redirect('post_detail', post_id=post.id)
+    else:
+        form = PostForm(instance=post)
+
+    return render(request, 'post_form.html', {'form': form})
+
+@login_required
+def post_delete(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if request.user == post.author:
+        post.delete()
+    return redirect('post_list')
+
+@login_required
+def delete_comment(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+
+    # Only allow the author of the comment to delete it
+    if comment.author == request.user:
+        post_id = comment.post.id  # Save the post ID to redirect after deletion
+        comment.delete()
+        return redirect(reverse('post_detail', args=[post_id]))
+    else:
+        return redirect('post_list')  # Or show a message that they can't delete it
+
+
+def analyze_comment_with_vader(comment_text):
+    try:
+        sentiment = sia.polarity_scores(comment_text)
+        return sentiment  # Return the sentiment analysis result
+    except Exception as e:
+        return {"error": str(e)}  # Handle any exceptions

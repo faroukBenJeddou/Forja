@@ -1,0 +1,40 @@
+{% extends "base_generic.html" %}
+{% load widget_tweaks %}
+{% load static %}  <!-- Ensure to load the static template tag -->
+
+{% block content %}
+    <div class="container mt-5">
+        <h2 class="mb-4">Liste des Rôles</h2>
+        <a href="{% url 'role_create' %}" class="btn btn-success mb-3">Ajouter un Rôle</a>
+
+        <div class="row">
+            {% for role in roles %}
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="trend_2im clearfix position-relative">
+                        <div class="trend_2ilast bg_grey p-3 clearfix">
+                            <h5 class="role-title">{{ role.title }}</h5>
+
+                            <!-- Update and Delete Buttons (only for admin users) -->
+                            {% if user.is_authenticated and user.is_staff %}
+                                <div class="mt-2 d-flex">
+                                    <a href="{% url 'role_update' role.pk %}" class="btn btn-warning btn-sm me-2">Modifier</a>
+                                    <form method="post" action="{% url 'role_delete' role.pk %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this role?');">Supprimer</button>
+                                    </form>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Handle empty roles -->
+        {% if not roles %}
+            <div class="col-12">
+                <p>Aucun rôle disponible dans la base de données.</p>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

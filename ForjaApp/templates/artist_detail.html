@@ -1,0 +1,7 @@
+<h2>Détails de l'artiste : {{ artist.name }}</h2>
+<p><strong>Biographie :</strong> {{ artist.biography }}</p>
+<p><strong>Date de naissance :</strong> {{ artist.birth_date }}</p>
+<p><strong>Nationalité :</strong> {{ artist.nationality }}</p>
+<p><strong>Date de décès :</strong> {{ artist.death_date }}</p>
+<a href="{% url 'update_artist' artist.pk %}">Modifier</a>
+<a href="{% url 'artist_list' %}">Retour à la liste</a>

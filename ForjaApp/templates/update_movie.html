@@ -1,0 +1,36 @@
+{% extends 'base_generic.html' %}
+
+{% block content %}
+<h2>Edit Movie: {{ movie.title }}</h2>
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="form-group">
+        <label for="id_title">Title</label>
+        {{ form.title }}
+    </div>
+
+    <div class="form-group">
+        <label for="id_release_date">Release Date</label>
+        {{ form.release_date }}
+    </div>
+
+    <div class="form-group">
+        <label for="id_overview">Overview</label>
+        {{ form.overview }}
+    </div>
+
+    <div class="form-group">
+        <label for="id_poster_path">Poster Path</label>
+        {{ form.poster_path }}
+    </div>
+
+    <div class="form-group">
+        <label for="id_genres">Select Genres</label>
+        {{ form.genres }}  <!-- Renders checkboxes for genres -->
+    </div>
+
+    <button type="submit">Update Movie</button>
+</form>
+<a href="{% url 'index' %}">Back to Movie List</a>
+{% endblock %}

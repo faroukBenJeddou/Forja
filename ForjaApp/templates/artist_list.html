@@ -1,0 +1,56 @@
+{% extends "base_generic.html" %}
+{% load widget_tweaks %}
+{% load static %}  <!-- Ensure to load the static template tag -->
+
+{% block content %}
+    <div class="container mt-5">
+        <h2 class="mb-4">Liste des Artistes</h2>
+        <a href="{% url 'create_artist' %}" class="btn btn-success mb-3">Ajouter un artiste</a>
+
+        <div class="row">
+            {% for artist in artists %}
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="trend_2im clearfix position-relative">
+                        <figure class="effect-jazz mb-0">
+                            <a href="{% url 'artist_detail' artist.pk %}">
+                                {% if artist.image %}
+                                    <img src="{{ artist.image.url }}" class="w-100" alt="{{ artist.name }}" height="350">
+                                {% else %}
+                                    <img src="{% static 'default_image_path.jpg' %}" class="w-100" alt="Default Image" height="350">
+                                {% endif %}
+                            </a>
+                        </figure>
+                        <div class="trend_2ilast bg_grey p-3 clearfix">
+                            <h5><a class="col_red" href="{% url 'artist_detail' artist.pk %}">{{ artist.name }}</a></h5>
+
+                            <!-- Display Roles -->
+                            <p>Rôles:
+                                {% for role in artist.roles.all %}
+                                    <span class="badge bg-primary">{{ role.title }}</span>{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </p>
+
+                            <!-- Update and Delete Buttons (only for admin users) -->
+                            {% if user.is_authenticated and user.is_staff %}
+                                <div class="mt-2 d-flex">
+                                    <a href="{% url 'update_artist' artist.pk %}" class="btn btn-warning btn-sm me-2">Modifier</a>
+                                    <form method="post" action="{% url 'delete_artist' artist.pk %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this artist?');">Supprimer</button>
+                                    </form>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Handle empty artists -->
+        {% if not artists %}
+            <div class="col-12">
+                <p>Aucun artiste disponible dans la base de données.</p>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

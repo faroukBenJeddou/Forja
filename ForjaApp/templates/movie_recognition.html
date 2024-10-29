@@ -1,0 +1,147 @@
+{% extends "base_generic.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Movie Recognition</title>
+    {% load static %}
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/font-awesome.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/global.css' %}" rel="stylesheet">
+    <link href="{% static 'css/services.css' %}" rel="stylesheet">
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+<section id="top">
+    <div class="container">
+        <div class="row top_1">
+            <!-- Your existing top section code -->
+        </div>
+    </div>
+</section>
+
+<section id="header">
+    <nav class="navbar navbar-expand-md navbar-light" id="navbar_sticky">
+        <!-- Your existing navbar code -->
+    </nav>
+</section>
+
+
+<section id="movie-recognition" class="pt-4 pb-4 bg_grey text-center">
+    <div class="container-xl">
+        <h4>Find Movies Based on an Image</h4>
+        <form id="movie-recognition-form" enctype="multipart/form-data" class="mt-3">
+            <input type="file" name="image" accept="image/*" required>
+            <button type="submit" class="btn btn-danger">Find Related Movies</button>
+        </form>
+        <div id="result" class="mt-3"></div>
+    </div>
+</section>
+
+<section id="what-if" class="pt-4 pb-4 bg_light text-center">
+    <div class="container-xl">
+        <h4>What If?</h4>
+        <p class="mt-2">Explore alternative endings for your favorite movies! Enter a movie title to receive a summary and a creative twist on how the story could have ended differently.</p>
+        <form id="movie-summary-form" class="mt-3">
+            <input type="text" name="movie_title" placeholder="Enter movie title" required>
+            <button type="submit" class="btn btn-primary">Get Summary and Different Ending</button>
+        </form>
+        <div id="summary-result" class="mt-3"></div>
+    </div>
+</section>
+
+<!-- Existing footer and other sections -->
+<section id="footer">
+    <!-- Your existing footer code -->
+</section>
+
+<script>
+    // Function to get the CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Handle movie recognition form submission
+    $('#movie-recognition-form').on('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const csrftoken = getCookie('csrftoken');
+
+        console.log("Submitting form with image:", formData.get('image'));
+
+        $.ajax({
+            type: 'POST',
+            url: '/movie_recognition/',  // Update to your actual URL
+            data: formData,
+            contentType: false,
+            processData: false,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(data) {
+                console.log("Success response received:", data);
+                if (data.results && data.results.length > 0) {
+                    let resultsHtml = '<h5>Related Movies:</h5><ul class="list-unstyled">';
+                    data.results.forEach(movie => {
+                        resultsHtml += `<li class="mb-3">
+                                        ${movie.title}
+                                        <img src="${movie.poster_url}" alt="${movie.title} poster" class="img-thumbnail" style="max-width: 200px;">
+                                    </li>`;
+                    });
+                    resultsHtml += '</ul>';
+                    $('#result').html(resultsHtml);
+                } else {
+                    $('#result').html('<p>No related movies found.</p>');
+                }
+            },
+            error: function(err) {
+                console.error("Error response received:", err);
+                $('#result').html('<p>Error: ' + (err.responseJSON ? err.responseJSON.error : 'Unknown error') + '</p>');
+            }
+        });
+    });
+
+    // Handle movie summary form submission
+    $('#movie-summary-form').on('submit', function(e) {
+        e.preventDefault();
+        const movieTitle = $(this).find('input[name="movie_title"]').val();
+        const csrftoken = getCookie('csrftoken');
+
+        $.ajax({
+            type: 'POST',
+            url: '/get_movie_summary/',  // Adjust the URL according to your Django routing
+            data: {
+                'movie_title': movieTitle,
+                'csrfmiddlewaretoken': csrftoken
+            },
+            success: function(data) {
+                console.log("Data received from server:", data); // Log the response
+                const summaryHtml = `<h5>Summary:</h5><p>${data.summary}</p>
+                                     <h5>Different Ending:</h5><p>${data.alternative_ending}</p>`;
+                $('#summary-result').html(summaryHtml);
+            },
+            error: function(err) {
+                console.error("Error response received:", err);
+                $('#summary-result').html('<p>Error: ' + (err.responseJSON ? err.responseJSON.error : 'Unknown error') + '</p>');
+            }
+        });
+    });
+</script>
+</body>
+{% endblock %}

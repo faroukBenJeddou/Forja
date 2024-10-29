@@ -1,5 +1,6 @@
 from django.contrib import admin 
-from .models import Movie, Rating, Recommendation, UserFeedback
+from .models import Movie, Rating, Recommendation, UserFeedback, Cinema, CinemaRating, Post, Comment
+
 
 class MovieAdmin(admin.ModelAdmin):
     list_display = ('title', 'release_date', 'poster_path')
@@ -31,8 +32,42 @@ class UserFeedbackAdmin(admin.ModelAdmin):
     ordering = ('created_at',)  # Trier par created_at
     list_per_page = 20  # Customize the number of items displayed per page
 
+class CinemaAdmin(admin.ModelAdmin):
+    # Ensure all fields used in list_display exist in the Cinema model
+    list_display = ('name', 'description', 'location', 'date_created')
+    search_fields = ('name', 'location')  # Fields that can be searched in the admin interface
+    list_filter = ('date_created',)  # Fields used to filter the list in the admin
+    ordering = ('-date_created',)  # Use descending order to show most recent first
+    list_per_page = 20  # Number of items displayed per page in the admin interface
+
+
+class CinemaRatingAdmin(admin.ModelAdmin):
+    list_display = ('user', 'cinema', 'score', 'date_rated')  # Display fields in the admin list
+    search_fields = ('user__username', 'cinema__name', 'review')  # Search by user, cinema name, and review text
+    list_filter = ('score', 'date_rated')  # Filter by score and date
+    ordering = ('-date_rated',)  # Order by date rated, descending
+    list_per_page = 20  # Customize the number of items displayed per page
+
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('title', 'author', 'created_at', 'updated_at')
+    search_fields = ('title', 'content', 'author__username')
+    list_filter = ('created_at',)
+    ordering = ('created_at',)
+    list_per_page = 20
+
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('post', 'author', 'created_at')
+    search_fields = ('post__title', 'author__username', 'content')
+    list_filter = ('created_at',)
+    ordering = ('created_at',)
+    list_per_page = 20
+    
 # Register your models here.
 admin.site.register(Movie, MovieAdmin)
 admin.site.register(Rating, RatingAdmin)
 admin.site.register(Recommendation, RecommendationAdmin)
 admin.site.register(UserFeedback, UserFeedbackAdmin)  # Register UserFeedback with the admin
+admin.site.register(Cinema, CinemaAdmin)
+admin.site.register(CinemaRating, CinemaRatingAdmin)
+admin.site.register(Post, PostAdmin)
+admin.site.register(Comment, CommentAdmin) 

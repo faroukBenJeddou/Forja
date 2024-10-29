@@ -58,34 +58,58 @@
 		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
 		  <span class="navbar-toggler-icon"></span>
 		</button>
-		<div class="collapse navbar-collapse" id="navbarSupportedContent">
-		  <ul class="navbar-nav mb-0">
-			<li class="nav-item">
-			  <a class="nav-link active" aria-current="page" href="{% url 'index' %}">Home</a>
-			</li>
-			<li class="nav-item">
-			  <a class="nav-link" href="{% url 'generate_image' %}">Génération d'Image</a>
-			</li>
-	
-			{% if user.is_authenticated %}
-			<li class="nav-item">
-				<a class="nav-link" href="{% url 'recommend_similar_movies' %}">Recommandation de Films</a>
-			  </li><li class="nav-item">
-			  <a class="nav-link" href="{% url 'profile' %}">Profile</a>
-			</li>
-			<li class="nav-item">
-			  <a class="nav-link" href="{% url 'logout' %}">Déconnexion</a>
-			</li>
-			{% else %}
-			<li class="nav-item">
-			  <a class="nav-link" href="{% url 'login' %}">Se connecter</a>
-			</li>
-			<li class="nav-item">
-			  <a class="nav-link" href="{% url 'register' %}">S'inscrire</a>
-			</li>
-			{% endif %}
-		  </ul>
-		</div>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <ul class="navbar-nav mb-0">
+                  <li class="nav-item">
+                      <a class="nav-link active" aria-current="page" href="{% url 'index' %}">Home</a>
+                  </li>
+
+                  <li class="nav-item">
+                      <a class="nav-link" href="{% url 'generate_image' %}">Génération d'Image</a>
+                  </li>
+
+				  <li class="nav-item">
+					<a class="nav-link" href="{% url 'post_list' %}">Forum</a>
+				</li>
+
+                  <li class="nav-item">
+                      <a class="nav-link" href="{% url 'artist_list' %}">Artistes</a>
+                  </li>
+
+                  <li class="nav-item">
+                      <a class="nav-link" href="{% url 'chat' %}">Chatbot</a>
+                  </li>
+                  <li class="nav-item dropdown">
+                      <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          Movies
+                      </a>
+                      <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                          <li><a class="dropdown-item" href="{% url 'movie_list' %}">Movies</a></li>
+                          <li><a class="dropdown-item" href="{% url 'movie_recognition' %}">Movie Recognition</a></li>
+                          <li><a class="dropdown-item" href="{% url 'recommend_similar_movies' %}">Recommandation de Films</a></li>
+                          {% if user.is_superuser %}
+                              <li><a class="dropdown-item" href="{% url 'add_movie' %}">Ajouter un film</a></li>
+                          {% endif %}
+                      </ul>
+                  </li>
+
+                  {% if user.is_authenticated %}
+                      <li class="nav-item">
+                          <a class="nav-link" href="{% url 'profile' %}">Profile</a>
+                      </li>
+                      <li class="nav-item">
+                          <a class="nav-link" href="{% url 'logout' %}">Déconnexion</a>
+                      </li>
+                  {% else %}
+                      <li class="nav-item">
+                          <a class="nav-link" href="{% url 'login' %}">Se connecter</a>
+                      </li>
+                      <li class="nav-item">
+                          <a class="nav-link" href="{% url 'register' %}">S'inscrire</a>
+                      </li>
+                  {% endif %}
+              </ul>
+          </div>
 	  </div>
 	</nav>
 	</section>
@@ -249,9 +273,9 @@
     </div>
 </section>
 
-  
-  
-  
+
+
+
 
 <section id="upcome" class="pt-4 pb-5">
 <div class="container">
@@ -267,187 +291,67 @@
    </div>
   </div>
  </div>
- <div class="row trend_2 mt-4">
-   <div id="carouselExampleCaptions2" class="carousel slide" data-bs-ride="carousel">
-  <div class="carousel-indicators">
-    <button type="button" data-bs-target="#carouselExampleCaptions2" data-bs-slide-to="0" class="active" aria-label="Slide 1"></button>
-    <button type="button" data-bs-target="#carouselExampleCaptions2" data-bs-slide-to="1" aria-label="Slide 2" class="" aria-current="true"></button>
-  </div>
-  <div class="carousel-inner">
-    <div class="carousel-item active">
-      <div class="trend_2i row">
-	    <div class="col-md-4">
-		  <div class="trend_2im clearfix position-relative">
-		   <div class="trend_2im1 clearfix">
-		     <div class="grid">
-		  <figure class="effect-jazz mb-0">
-			<a href="#"><img src="{% static 'img/12.jpg' %}" class="w-100" alt="img25"></a>
-		  </figure>
-	  </div>
-		   </div>
-		   <div class="trend_2im2 clearfix text-center position-absolute w-100 top-0">
-		     <span class="fs-1"><a class="col_red" href="#"><i class="fa fa-youtube-play"></i></a></span>
-		   </div>
-		  </div>
-		  <div class="trend_2ilast bg_grey p-3 clearfix">
-		    <h5><a class="col_red" href="#">Semper</a></h5>
-			<p class="mb-2">A father travels from Oklahoma to France to help his...</p>
-			<span class="col_red">
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		</span>
-		<p class="mb-0">1 Views</p>
-		  </div>  
-		</div>
-		<div class="col-md-4">
-		  <div class="trend_2im clearfix position-relative">
-		   <div class="trend_2im1 clearfix">
-		     <div class="grid">
-		  <figure class="effect-jazz mb-0">
-			<a href="#"><img src="{% static 'img/13.jpg' %}" class="w-100" alt="img25"></a>
-		  </figure>
-	  </div>
-		   </div>
-		   <div class="trend_2im2 clearfix text-center position-absolute w-100 top-0">
-		     <span class="fs-1"><a class="col_red" href="#"><i class="fa fa-youtube-play"></i></a></span>
-		   </div>
-		  </div>
-		  <div class="trend_2ilast bg_grey p-3 clearfix">
-		    <h5><a class="col_red" href="#">Dapibus</a></h5>
-			<p class="mb-2">A father travels from Oklahoma to France to help his...</p>
-			<span class="col_red">
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		</span>
-		<p class="mb-0">1 Views</p>
-		  </div>  
-		</div>
-		<div class="col-md-4">
-		  <div class="trend_2im clearfix position-relative">
-		   <div class="trend_2im1 clearfix">
-		     <div class="grid">
-		  <figure class="effect-jazz mb-0">
-			<a href="#"><img src="{% static 'img/14.jpg' %}" class="w-100" alt="img25"></a>
-		  </figure>
-	  </div>
-		   </div>
-		   <div class="trend_2im2 clearfix text-center position-absolute w-100 top-0">
-		     <span class="fs-1"><a class="col_red" href="#"><i class="fa fa-youtube-play"></i></a></span>
-		   </div>
-		  </div>
-		  <div class="trend_2ilast bg_grey p-3 clearfix">
-		    <h5><a class="col_red" href="#">Ipsum</a></h5>
-			<p class="mb-2">A father travels from Oklahoma to France to help his...</p>
-			<span class="col_red">
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		</span>
-		<p class="mb-0">1 Views</p>
-		  </div>  
-		</div>
-		
-	  </div>
-    </div>
-    <div class="carousel-item">
-      <div class="trend_2i row">
-	    
-		<div class="col-md-4">
-		  <div class="trend_2im clearfix position-relative">
-		   <div class="trend_2im1 clearfix">
-		     <div class="grid">
-		  <figure class="effect-jazz mb-0">
-			<a href="#"><img src="{% static 'img/15.jpg' %}" class="w-100" alt="img25"></a>
-		  </figure>
-	  </div>
-		   </div>
-		   <div class="trend_2im2 clearfix text-center position-absolute w-100 top-0">
-		     <span class="fs-1"><a class="col_red" href="#"><i class="fa fa-youtube-play"></i></a></span>
-		   </div>
-		  </div>
-		  <div class="trend_2ilast bg_grey p-3 clearfix">
-		    <h5><a class="col_red" href="#">Dapibus</a></h5>
-			<p class="mb-2">A father travels from Oklahoma to France to help his...</p>
-			<span class="col_red">
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		</span>
-		<p class="mb-0">1 Views</p>
-		  </div>  
-		</div>
-		<div class="col-md-4">
-		  <div class="trend_2im clearfix position-relative">
-		   <div class="trend_2im1 clearfix">
-		     <div class="grid">
-		  <figure class="effect-jazz mb-0">
-			<a href="#"><img src="{% static 'img/16.jpg' %}" class="w-100" alt="img25"></a>
-		  </figure>
-	  </div>
-		   </div>
-		   <div class="trend_2im2 clearfix text-center position-absolute w-100 top-0">
-		     <span class="fs-1"><a class="col_red" href="#"><i class="fa fa-youtube-play"></i></a></span>
-		   </div>
-		  </div>
-		  <div class="trend_2ilast bg_grey p-3 clearfix">
-		    <h5><a class="col_red" href="#">Ipsum</a></h5>
-			<p class="mb-2">A father travels from Oklahoma to France to help his...</p>
-			<span class="col_red">
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		</span>
-		<p class="mb-0">1 Views</p>
-		  </div>  
-		</div>
-		<div class="col-md-4">
-		  <div class="trend_2im clearfix position-relative">
-		   <div class="trend_2im1 clearfix">
-		     <div class="grid">
-		  <figure class="effect-jazz mb-0">
-			<a href="#"><img src="{% static 'img/17.jpg' %}" class="w-100" alt="img25"></a>
-		  </figure>
-	  </div>
-		   </div>
-		   <div class="trend_2im2 clearfix text-center position-absolute w-100 top-0">
-		     <span class="fs-1"><a class="col_red" href="#"><i class="fa fa-youtube-play"></i></a></span>
-		   </div>
-		  </div>
+    <div class="container">
+        <form method="get" action="{% url 'index' %}">
+            <label for="genre">Filter by Genre:</label>
+            <select name="genre" id="genre" class="form-select mb-3">
+                <option value="">All</option>
+                {% for genre in genres %}
+                    <option value="{{ genre.name }}"{% if genre.name == selected_genre %} selected{% endif %}>
+                        {{ genre.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </form>
 
-		  <div class="trend_2ilast bg_grey p-3 clearfix">
-		    <h5><a class="col_red" href="#">Lorem</a></h5>
-			<p class="mb-2">A father travels from Oklahoma to France to help his...</p>
-			<span class="col_red">
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		 <i class="fa fa-star"></i>
-		</span>
-		<p class="mb-0">1 Views</p>
-		  </div>  
-		</div>
-	  </div>
-    </div>
-    
-  </div>
+        <h3>Database Movies</h3>
+        <div class="row">
+            {% for movie in database_movies %}
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="trend_2im clearfix position-relative">
+                        <figure class="effect-jazz mb-0">
+                            <a href="#"><img src="{{ movie.poster_path.url }}" class="w-100" alt="{{ movie.title }}" height="350"></a>
+                        </figure>
+                        <div class="trend_2ilast bg_grey p-3 clearfix">
+                            <h5><a class="col_red" href="#">{{ movie.title }}</a></h5>
+                            <p class="mb-2">{{ movie.overview|truncatewords:10 }}</p>
+                            <p class="mb-0">{{ movie.vote_count }} Views</p>
 
-</div>
- </div>
+                            <!-- Update and Delete Buttons (only for admin users) -->
+                            {% if user.is_authenticated and user.is_staff %}
+                                <div class="mt-2 d-flex">
+                                    <a href="{% url 'update_movie' movie.id %}" class="btn btn-warning btn-sm me-2">Update</a>
+                                    <form method="post" action="{% url 'delete_movie' movie.id %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this movie?');">Delete</button>
+                                    </form>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Handle empty database movies -->
+        {% if not database_movies %}
+            <div class="col-12">
+                <p>No movies available in the database.</p>
+            </div>
+        {% endif %}
+    </div>
 </div>
 </section>
+
+
+
+
+
+
+
+
+
 
 <section id="popular" class="pt-4 pb-5 bg_grey">
 <div class="container">
@@ -480,7 +384,7 @@
             <span class="d-md-block">FREE MOVIES</span>
         </a>
     </li>
-	
+
 </ul>
  </div>
  <div class="popular_2 row mt-4">
@@ -863,7 +767,7 @@
 	   </div>
 	  </div>
     </div>
-	
+
 	<div class="tab-pane" id="settings_o">
 	    <div class="popular_2i row">
 	   <div class="col-md-6">
@@ -947,7 +851,7 @@
 		   </div>
 		  </div>
 		 </div>
-		 <div class="col-md-8 col-8"> 
+		 <div class="col-md-8 col-8">
 		  <div class="popular_2i1r">
 		   <h5><a class="col_red" href="#">Quis Sem</a></h5>
 		   <h6>Action, Thriller</h6>
@@ -990,7 +894,7 @@
 	   </div>
 	  </div>
     </div>
-	
+
 </div>
  </div>
 </div>

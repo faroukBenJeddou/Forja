@@ -5,6 +5,56 @@ Author: TemplatesOnWeb
 Author URI: https://www.templateonweb.com/
 Licence: <a href="https://www.templateonweb.com/license">Website Template Licence</a>
 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.pagination a, .pagination span {
+  padding: 8px 12px;
+  border: 1px solid #ffffff; /* Light border color */
+  text-decoration: none;
+  color: #ffffff; /* White text for visibility on dark background */
+  background-color: #333333; /* Slightly lighter background for links */
+  border-radius: 5px;
+}
+
+.pagination a:hover {
+  background-color: #555555; /* Slightly lighter color on hover */
+  color: #ffffff;
+}
+
+.pagination .current-page {
+  font-weight: bold;
+  background-color: #ffffff; /* White background */
+  color: #333333; /* Dark text on current page */
+}
+
+/* Section background */
+#post-list {
+  background-color: #000; /* Black background for the section */
+  color: #fff; /* White text for readability */
+}
+
+/* Card styles */
+.card {
+  background-color: #111; /* Darker background for the card */
+  border: 1px solid #444; /* Optional: border for definition */
+  color: #fff; /* White text color for card */
+}
+
+/* Button styles */
+.card .btn {
+  background-color: #007bff; /* Button color */
+  color: #fff; /* Button text color */
+}
+
+.card .btn:hover {
+  background-color: #0056b3; /* Darker on hover */
+}
+
 body{
 font-family: 'Rajdhani', sans-serif;
 color: #ffffff;

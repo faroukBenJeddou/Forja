@@ -1,0 +1,21 @@
+<!-- templates/upload.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Télécharger une image</title>
+</head>
+<body>
+    <h1>Télécharger une image pour supprimer l'arrière-plan</h1>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="image" accept="image/*" required>
+        <button type="submit">Télécharger</button>
+    </form>
+    
+    {% if image %}
+        <h2>Image avec arrière-plan supprimé :</h2>
+        <img src="data:image/png;base64,{{ image }}" alt="Image traitée">
+    {% endif %}
+</body>
+</html>

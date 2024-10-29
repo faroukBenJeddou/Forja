@@ -1,0 +1,19 @@
+<!-- templates/remover/result.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Removal Result</title>
+</head>
+<body>
+    <h1>Background Removed!</h1>
+    {% if output_image_url %}
+        <img src="{{ output_image_url }}" alt="Processed Image" onerror="this.onerror=null; this.src='/static/images/error.png';" />
+    {% else %}
+        <p>{{ error }}</p>
+    {% endif %}
+    <br>
+    <a href="{% url 'remove_background' %}">Upload another image</a>
+</body>
+</html>

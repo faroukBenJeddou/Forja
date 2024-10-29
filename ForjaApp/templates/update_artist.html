@@ -1,0 +1,79 @@
+{% extends "base_generic.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+    <style>
+        .update-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Full height */
+            position: relative; /* Relative position for the container */
+            z-index: 1; /* Ensure the wrapper is on top */
+        }
+
+        .update-container {
+            background-color: rgba(25, 26, 29, 0.8);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 400px; /* Adjust width as needed */
+            text-align: center;
+            z-index: 10; /* Bring the container to the front */
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #de1002;
+        }
+
+        .form-control {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #27292d;
+            border-radius: 4px;
+            color: #999!important;
+            background: none;
+        }
+
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #de1002;
+        }
+
+        button.btn-update {
+            background: #de1002;
+            color: #fff;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+
+        button.btn-update:hover {
+            background: #fff;
+            color: #de1002;
+        }
+    </style>
+
+    <div class="update-wrapper">
+        <div class="update-container">
+            <h2>Modifier l'artiste : {{ artist.name }}</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    {{ form.name|add_class:"form-control" | attr:"placeholder:'Nom de l\'Artiste'" }}
+                    {{ form.biography|add_class:"form-control" | attr:"placeholder:'Biographie'" }}
+                    {{ form.birth_date|add_class:"form-control" | attr:"placeholder:'Date de Naissance'" }}
+                    {{ form.nationality|add_class:"form-control" | attr:"placeholder:'Nationalité'" }}
+                    {{ form.death_date|add_class:"form-control" | attr:"placeholder:'Date de Décès'" }}
+                    {{ form.image|add_class:"form-control" | attr:"placeholder:'Image'" }}
+                </div>
+                <button type="submit" class="btn-update">Mettre à jour</button>
+                <a href="{% url 'artist_list' %}" class="btn btn-secondary">Annuler</a>
+            </form>
+        </div>
+    </div>
+{% endblock %}

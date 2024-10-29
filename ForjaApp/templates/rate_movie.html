@@ -1,0 +1,95 @@
+{% extends "base_generic.html" %}
+{% load widget_tweaks %}
+
+{% block content %}
+
+<style>
+    .star-rating {
+        direction: rtl; /* Right to left for easier star selection */
+        display: inline-block;
+    }
+
+    .star-rating input {
+        display: none; /* Hide the radio buttons */
+    }
+
+    .star-rating label {
+        font-size: 2rem; /* Adjust size as needed */
+        color: lightgray; /* Default star color */
+        cursor: pointer;
+    }
+
+    .star-rating input:checked ~ label {
+        color: gold; /* Color of selected stars */
+    }
+
+    .star-rating label:hover,
+    .star-rating label:hover ~ label {
+        color: gold; /* Highlight stars on hover */
+    }
+
+    .review-list {
+            background-color: black; /* Background color for the review list */
+            padding: 15px; /* Optional: Add some padding */
+            border-radius: 5px; /* Optional: Add rounded corners */
+        }
+
+        .review-list .list-group-item {
+            color: white; /* Text color for review items */
+            background-color: transparent; /* Make the individual items transparent */
+        }
+
+        .review-list .list-group-item p {
+            color: white; /* Text color for review paragraphs */
+        }
+
+        .review-list .list-group-item small {
+            color: lightgray; /* Color for the small text (date) */
+        }
+</style>
+    <h1>Rate: {{ movie.title }}</h1>
+    <p>{{ movie.overview }}</p>
+
+    <!-- Display the form for rating the movie -->
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- Star rating input -->
+        <div class="star-rating">
+            <input id="star5" type="radio" name="score" value="5" {% if user_rating and user_rating.score == 5 %} checked {% endif %} />
+            <label for="star5" title="5 stars" class="star">&#9733;</label>
+            <input id="star4" type="radio" name="score" value="4" {% if user_rating and user_rating.score == 4 %} checked {% endif %} />
+            <label for="star4" title="4 stars" class="star">&#9733;</label>
+            <input id="star3" type="radio" name="score" value="3" {% if user_rating and user_rating.score == 3 %} checked {% endif %} />
+            <label for="star3" title="3 stars" class="star">&#9733;</label>
+            <input id="star2" type="radio" name="score" value="2" {% if user_rating and user_rating.score == 2 %} checked {% endif %} />
+            <label for="star2" title="2 stars" class="star">&#9733;</label>
+            <input id="star1" type="radio" name="score" value="1" {% if user_rating and user_rating.score == 1 %} checked {% endif %} />
+            <label for="star1" title="1 star" class="star">&#9733;</label>
+        </div>
+
+        <!-- Review Text Field -->
+        <div class="form-group">
+            <label for="review">Your Review</label>
+            <textarea id="review" name="review" class="form-control" rows="4">{% if user_rating %}{{ user_rating.review }}{% endif %}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">Submit Rating</button>
+    </form>
+
+    <!-- Display existing reviews -->
+    <h2>Reviews for {{ movie.title }}</h2>
+    <ul class="list-group review-list">
+        {% for rating in ratings %}
+            <li class="list-group-item">
+                <strong>{{ rating.user.username }}</strong> rated it 
+                <span>{{ rating.score }}</span> stars
+                <p>{{ rating.review }}</p>
+                <small>Rated on {{ rating.date_rated }}</small>
+            </li>
+        {% empty %}
+            <li class="list-group-item">No reviews yet.</li>
+        {% endfor %}
+    </ul>
+
+{% endblock %}

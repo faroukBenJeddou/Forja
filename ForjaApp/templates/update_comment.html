@@ -1,0 +1,17 @@
+{% extends "base_generic.html" %}
+{% load static %}
+
+{% block content %}
+<section id="comment-form">
+    <div class="container">
+        <h2>Edit Comment</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.content }}
+            </div>
+            <button type="submit" class="btn btn-primary">Update Comment</button>
+        </form>
+    </div>
+</section>
+{% endblock %}
